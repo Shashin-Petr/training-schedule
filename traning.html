@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Начни с Traning Pro - Генератор расписания тренировок</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Form Card */
+        .form-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .generate-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Schedule Card */
+        .schedule-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .schedule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .schedule-header h2 {
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .export-btn {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .export-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .day-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .day-header {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .exercise-list {
+            list-style: none;
+        }
+
+        .exercise-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .exercise-icon {
+            font-size: 1.2rem;
+        }
+
+        .exercise-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .exercise-details {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .rest-day {
+            text-align: center;
+            padding: 20px;
+            background: #fff3cd;
+            border-radius: 12px;
+            color: #856404;
+            font-weight: 600;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .generating {
+            animation: pulse 1s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏋️‍♂️ GymSchedule Pro</h1>
+            <p>Персональный генератор расписания тренировок на неделю</p>
+        </div>
+
+        <div class="main-grid">
+            <div class="form-card">
+                <form id="scheduleForm">
+                    <div class="form-group">
+                        <label>🎯 Цель тренировок</label>
+                        <select id="goal" required>
+                            <option value="strength">💪 Набор мышечной массы</option>
+                            <option value="fatloss">🔥 Сжигание жира</option>
+                            <option value="endurance">🏃 Выносливость</option>
+                            <option value="strength_endurance">⚡ Силовая выносливость</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>📅 Количество тренировок в неделю</label>
+                        <select id="daysCount" required>
+                            <option value="3">3 дня (Минимум)</option>
+                            <option value="4" selected>4 дня (Оптимально)</option>
+                            <option value="5">5 дней (Продвинутый)</option>
+                            <option value="6">6 дней (Интенсивный)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>⏱️ Уровень подготовки</label>
+                        <select id="level" required>
+                            <option value="beginner">🌱 Новичок</option>
+                            <option value="intermediate" selected>⚡ Средний</option>
+                            <option value="advanced">🏆 Продвинутый</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>⏰ Время тренировки (минут)</label>
+                        <input type="number" id="duration" value="60" min="30" max="120" step="10">
+                    </div>
+
+                    <button type="submit" class="generate-btn">✨ Сгенерировать расписание</button>
+                </form>
+            </div>
+
+            <div class="schedule-card">
+                <div class="schedule-header">
+                    <h2>📋 Ваше расписание</h2>
+                    <div class="export-buttons">
+                        <button id="exportPdf" class="export-btn">📄 Экспорт PDF</button>
+                        <button id="exportJson" class="export-btn">💾 Сохранить JSON</button>
+                    </div>
+                </div>
+                <div id="scheduleContent">
+                    <div class="loading">
+                        Настройте параметры и нажмите "Сгенерировать расписание"
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  
+    <script>
+        // База данных упражнений по целям
+        const exerciseDatabase = {
+            strength: {
+                beginner: {
+                    upper: [
+                        { name: "Жим штанги лежа", icon: "🏋️", sets: "3", reps: "8-10", rest: "90 сек" },
+                        { name: "Тяга верхнего блока", icon: "📊", sets: "3", reps: "10-12", rest: "60 сек" },
+                        { name: "Жим гантелей сидя", icon: "💪", sets: "3", reps: "10-12", rest: "60 сек" },
+                        { name: "Тяга штанги в наклоне", icon: "🔄", sets: "3", reps: "8-10", rest: "90 сек" },
+                        { name: "Сгибание рук с гантелями", icon: "💪", sets: "3", reps: "10-12", rest: "60 сек" }
+                    ],
+                    lower: [
+                        { name: "Приседания со штангой", icon: "🏋️", sets: "3", reps: "8-10", rest: "90 сек" },
+                        { name: "Румынская тяга", icon: "📊", sets: "3", reps: "10-12", rest: "60 сек" },
+                        { name: "Жим ногами", icon: "🦵", sets: "3", reps: "10-12", rest: "60 сек" },
+                        { name: "Выпады с гантелями", icon: "🏃", sets: "3", reps: "10-12", rest: "60 сек" },
+                        { name: "Подъем на носки", icon: "👟", sets: "3", reps: "15-20", rest: "45 сек" }
+                    ],
+                    full: [
+                        { name: "Становая тяга", icon: "🏋️", sets: "3", reps: "5-8", rest: "120 сек" },
+                        { name: "Жим штанги стоя", icon: "💪", sets: "3", reps: "8-10", rest: "90 сек" },
+                        { name: "Приседания", icon: "🦵", sets: "3", reps: "8-10", rest: "90 сек" },
+                        { name: "Подтягивания", icon: "📊", sets: "3", reps: "max", rest: "60 сек" },
+                        { name: "Отжимания на брусьях", icon: "💪", sets: "3", reps: "8-12", rest: "60 сек" }
+                    ]
+                },
+                intermediate: {
+                    upper: [
+                        { name: "Жим штанги лежа", icon: "🏋️", sets: "4", reps: "8-10", rest: "90 сек" },
+                        { name: "Тяга штанги в наклоне", icon: "🔄", sets: "4", reps: "8-10", rest: "90 сек" },
+                        { name: "Жим гантелей под углом", icon: "💪", sets: "4", reps: "10-12", rest: "60 сек" },
+                        { name: "Французский жим", icon: "💪", sets: "3", reps: "10-12", rest: "60 сек" },
+                        { name: "Подъем гантелей на бицепс", icon: "💪", sets: "3", reps: "10-12", rest: "60 сек" },
+                        { name: "Разведение гантелей в стороны", icon: "🔄", sets: "3", reps: "12-15", rest: "45 сек" }
+                    ],
+                    lower: [
+                        { name: "Приседания со штангой", icon: "🏋️", sets: "4", reps: "8-10", rest: "90 сек" },
+                        { name: "Румынская тяга", icon: "📊", sets: "4", reps: "10-12", rest: "90 сек" },
+                        { name: "Жим ногами", icon: "🦵", sets: "4", reps: "10-12", rest: "60 сек" },
+                        { name: "Выпады с штангой", icon: "🏃", sets: "3", reps: "10-12", rest: "60 сек" },
+                        { name: "Сгибание ног лежа", icon: "🦵", sets: "3", reps: "12-15", rest: "45 сек" },
+                        { name: "Подъем на носки сидя", icon: "👟", sets: "4", reps: "15-20", rest: "45 сек" }
+                    ],
+                    full: [
+                        { name: "Становая тяга", icon: "🏋️", sets: "4", reps: "5-6", rest: "120 сек" },
+                        { name: "Жим штанги лежа", icon: "💪", sets: "4", reps: "8-10", rest: "90 сек" },
+                        { name: "Приседания", icon: "🦵", sets: "4", reps: "8-10", rest: "90 сек" },
+                        { name: "Тяга штанги", icon: "📊", sets: "4", reps: "8-10", rest: "90 сек" },
+                        { name: "Жим гантелей стоя", icon: "💪", sets: "3", reps: "10-12", rest: "60 сек" },
+                        { name: "Подтягивания с весом", icon: "📊", sets: "3", reps: "8-10", rest: "60 сек" }
+                    ]
+                },
+                advanced: {
+                    upper: [
+                        { name: "Жим штанги лежа", icon: "🏋️", sets: "5", reps: "6-8", rest: "120 сек" },
+                        { name: "Жим гантелей под углом", icon: "💪", sets: "4", reps: "8-10", rest: "90 сек" },
+                        { name: "Тяга штанги в наклоне", icon: "🔄", sets: "4", reps: "8-10", rest: "90 сек" },
+                        { name: "Разводка гантелей", icon: "💪", sets: "3", reps: "10-12", rest: "60 сек" },
+                        { name: "Французский жим", icon: "💪", sets: "4", reps: "8-10", rest: "60 сек" },
+                        { name: "Подъем штанги на бицепс", icon: "💪", sets: "4", reps: "8-10", rest: "60 сек" },
+                        { name: "Тяга к подбородку", icon: "🔄", sets: "3", reps: "10-12", rest: "45 сек" }
+                    ],
+                    lower: [
+                        { name: "Приседания со штангой", icon: "🏋️", sets: "5", reps: "6-8", rest: "120 сек" },
+                        { name: "Становая тяга", icon: "🏋️", sets: "4", reps: "5-6", rest: "120 сек" },
+                        { name: "Жим ногами", icon: "🦵", sets: "4", reps: "10-12", rest: "90 сек" },
+                        { name: "Выпады с штангой", icon: "🏃", sets: "4", reps: "10-12", rest: "60 сек" },
+                        { name: "Сгибание ног", icon: "🦵", sets: "4", reps: "10-12", rest: "60 сек" },
+                        { name: "Гиперэкстензия с весом", icon: "📊", sets: "3", reps: "12-15", rest: "45 сек" }
+                    ],
+                    full: [
+                        { name: "Становая тяга", icon: "🏋️", sets: "5", reps: "5", rest: "120 сек" },
+                        { name: "Жим штанги лежа", icon: "💪", sets: "5", reps: "6-8", rest: "90 сек" },
+                        { name: "Приседания", icon: "🦵", sets: "5", reps: "6-8", rest: "120 сек" },
+                        { name: "Тяга штанги", icon: "📊", sets: "4", reps: "8-10", rest: "90 сек" },
+                        { name: "Жим гантелей стоя", icon: "💪", sets: "4", reps: "8-10", rest: "60 сек" },
+                        { name: "Подтягивания с весом", icon: "📊", sets: "4", reps: "8-10", rest: "60 сек" },
+                        { name: "Отжимания на брусьях", icon: "💪", sets: "4", reps: "10-12", rest: "60 сек" }
+                    ]
+                }
+            },
+            fatloss: {
+                beginner: {
+                    upper: [
+                        { name: "Круговые тренировки", icon: "🔄", sets: "3", reps: "12-15", rest: "30 сек" },
+                        { name: "Берпи", icon: "🏃", sets: "3", reps: "10", rest: "30 сек" },
+                        { name: "Отжимания", icon: "💪", sets: "3", reps: "12-15", rest: "30 сек" },
+                        { name: "Приседания с прыжком", icon: "🦵", sets: "3", reps: "12", rest: "30 сек" }
+                    ],
+                    lower: [
+                        { name: "Приседания", icon: "🦵", sets: "3", reps: "15-20", rest: "30 сек" },
+                        { name: "Выпады", icon: "🏃", sets: "3", reps: "12-15", rest: "30 сек" },
+                        { name: "Прыжки на скакалке", icon: "🎯", sets: "3", reps: "60 сек", rest: "30 сек" }
+                    ],
+                    full: [
+                        { name: "Круговая тренировка", icon: "🔄", sets: "4", reps: "12-15", rest: "30 сек" },
+                        { name: "Берпи", icon: "🏃", sets: "4", reps: "12", rest: "30 сек" },
+                        { name: "Отжимания", icon: "💪", sets: "4", reps: "15", rest: "30 сек" }
+                    ]
+                },
+                intermediate: {
+                    upper: [
+                        { name: "Интервальный тренинг", icon: "⏱️", sets: "5", reps: "45 сек", rest: "15 сек" },
+                        { name: "Берпи с отжиманием", icon: "🏃", sets: "4", reps: "12-15", rest: "30 сек" },
+                        { name: "Скалолаз", icon: "🧗", sets: "4", reps: "30 сек", rest: "30 сек" }
+                    ],
+                    lower: [
+                        { name: "Приседания с выпрыгиванием", icon: "🦵", sets: "4", reps: "15", rest: "30 сек" },
+                        { name: "Выпады в прыжке", icon: "🏃", sets: "4", reps: "12-15", rest: "30 сек" },
+                        { name: "Берпи", icon: "🏋️", sets: "4", reps: "12", rest: "30 сек" }
+                    ],
+                    full: [
+                        { name: "HIIT тренировка", icon: "⚡", sets: "6", reps: "45 сек", rest: "15 сек" },
+                        { name: "Круговая с весом", icon: "🏋️", sets: "4", reps: "12-15", rest: "30 сек" }
+     ]
+                },
+                advanced: {
+                    upper: [
+                        { name: "Табата", icon: "⏱️", sets: "8", reps: "20 сек", rest: "10 сек" },
+                        { name: "Комплексные движения", icon: "🔄", sets: "5", reps: "12-15", rest: "20 сек" }
+                    ],
+                    lower: [
+                        { name: "Спринтерские интервалы", icon: "🏃", sets: "10", reps: "30 сек", rest: "30 сек" },
+                        { name: "Плиометрика", icon: "⚡", sets: "5", reps: "12", rest: "30 сек" }
+                    ],
+                    full: [
+                        { name: "CrossFit WOD", icon: "🏆", sets: "AMRAP", reps: "15 мин", rest: "0" },
+                        { name: "Комплексный HIIT", icon: "⚡", sets: "8", reps: "40 сек", rest: "20 сек" }
+                    ]
+                }
+            },
+            endurance: {
+                beginner: {
+                    full: [
+                        { name: "Беговая дорожка", icon: "🏃", duration: "20 мин", intensity: "Легкий" },
+                        { name: "Велотренажер", icon: "🚴", duration: "20 мин", intensity: "Средний" },
+                        { name: "Эллипс", icon: "🏃", duration: "20 мин", intensity: "Легкий" }
+                    ]
+                },
+                intermediate: {
+                    full: [
+                        { name: "Интервальный бег", icon: "🏃", duration: "30 мин", intensity: "Средний/Высокий" },
+                        { name: "Гребной тренажер", icon: "🚣", duration: "20 мин", intensity: "Средний" },
+                        { name: "Степпер", icon: "📊", duration: "20 мин", intensity: "Средний" }
+                    ]
+                },
+                advanced: {
+                    full: [
+                        { name: "Темповый бег", icon: "🏃", duration: "45 мин", intensity: "Высокий" },
+                        { name: "Велоинтервалы", icon: "🚴", duration: "30 мин", intensity: "Высокий" }
+                    ]
+                }
+            }
+        };
+
+        const daysOfWeek = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+
+        class ScheduleGenerator {
+            constructor(goal, daysCount, level, duration) {
+                this.goal = goal;
+                this.daysCount = parseInt(daysCount);
+                this.level = level;
+                this.duration = duration;
+                this.schedule = [];
+            }
+
+            generate() {
+                const trainingDays = this.selectTrainingDays();
+                this.schedule = daysOfWeek.map((day, index) => {
+                    const isTrainingDay = trainingDays.includes(index);
+                    if (!isTrainingDay) {
+                        return { day, type: 'rest', exercises: null };
+                    }
+                    
+                    const workoutType = this.getWorkoutType(index);
+                    const exercises = this.getExercises(workoutType);
+                    
+                    return {
+                        day,
+                        type: 'training',
+                        workoutType,
+                        exercises,
+                        duration: this.duration
+                    };
+                });
+                
+                return this.schedule;
+            }
+
+            selectTrainingDays() {
+                const totalDays = this.daysCount;
+                const indices = [];
+                
+                // Распределяем тренировки равномерно по неделе
+                if (totalDays === 3) {
+                    indices.push(0, 2, 4); // ПН, СР, ПТ
+                } else if (totalDays === 4) {
+                    indices.push(0, 1, 3, 5); // ПН, ВТ, ЧТ, СБ
+                } else if (totalDays === 5) {
+                    indices.push(0, 1, 2, 3, 5); // ПН-ЧТ, СБ
+                } else if (totalDays === 6) {
+                    indices.push(0, 1, 2, 3, 4, 5); // ПН-СБ
+                }
+                
+                return indices;
+            }
+
+            getWorkoutType(dayIndex) {
+                const trainingPattern = [
+                    'upper', 'lower', 'full', 'upper', 'lower', 'full', 'full'
+                ];
+                return trainingPattern[dayIndex % trainingPattern.length];
+            }
+
+            getExercises(workoutType) {
+                const db = exerciseDatabase[this.goal];
+                if (!db || !db[this.level] || !db[this.level][workoutType]) {
+                    return this.getFallbackExercises(workoutType);
+                }
+                
+                const exercises = db[this.level][workoutType];
+                // Возвращаем первые 3-6 упражнений в зависимости от уровня
+                const count = this.level === 'beginner' ? 4 : (this.level === 'intermediate' ? 5 : 6);
+                return exercises.slice(0, count);
+            }
+
+            getFallbackExercises(workoutType) {
+                return [
+                    { name: "Отжимания", icon: "💪", sets: "3", reps: "10-12" },
+                    { name: "Приседания", icon: "🦵", sets: "3", reps: "12-15" },
+                    { name: "Планка", icon: "", duration: "60 сек" }
+                ];
+            }
+        }
+
+        function renderSchedule(schedule) {
+            const container = document.getElementById('scheduleContent');
+            
+            const weekGrid = document.createElement('div');
+            weekGrid.className = 'week-grid';
+            
+            schedule.forEach(day => {
+                const dayCard = document.createElement('div');
+                dayCard.className = 'day-card';
+                
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'day-header';
+                dayHeader.innerHTML = day.day;
+                
+                dayCard.appendChild(dayHeader);
+                
+                if (day.type === 'rest') {
+                    const restDiv = document.createElement('div');
+                    restDiv.className = 'rest-day';
+                    restDiv.innerHTML = '😴 День отдыха<br><small>Восстановление обязательно!</small>';
+                    dayCard.appendChild(restDiv);
+                } else {
+                    const durationDiv = document.createElement('div');
+                    durationDiv.style.marginBottom = '10px';
+                    durationDiv.style.fontSize = '0.85rem';
+                    durationDiv.style.color = '#667eea';
+                    durationDiv.innerHTML = `⏱️ Длительность: ${day.duration} минут`;
+                    dayCard.appendChild(durationDiv);
+                    
+                    const exerciseList = document.createElement('ul');
+                    exerciseList.className = 'exercise-list';
+                    
+                    day.exercises.forEach(exercise => {
+                        const item = document.createElement('li');
+                        item.className = 'exercise-item';
+                        
+                        const icon = document.createElement('span');
+                        icon.className = 'exercise-icon';
+                        icon.textContent = exercise.icon || '💪';
+                        
+                        const nameSpan = document.createElement('span');
+                        nameSpan.className = 'exercise-name';
+                        nameSpan.textContent = exercise.name;
+                        
+                        const detailsSpan = document.createElement('span');
+                        detailsSpan.className = 'exercise-details';
+                        
+                        if (exercise.sets) {
+                            detailsSpan.textContent = `${exercise.sets} × ${exercise.reps} | отдых ${exercise.rest || '60'}`;
+                        } else if (exercise.duration) {
+                            detailsSpan.textContent = `${exercise.duration} | ${exercise.intensity || 'Средний'} темп`;
+                        } else {
+                            detailsSpan.textContent = 'Следуйте технике выполнения';
+                        }
+                        
+                        item.appendChild(icon);
+                        item.appendChild(nameSpan);
+                        item.appendChild(detailsSpan);
+                        exerciseList.appendChild(item);
+                    });
+                    
+                    dayCard.appendChild(exerciseList);
+                }
+                
+                weekGrid.appendChild(dayCard);
+            });
+            
+            container.innerHTML = '';
+            container.appendChild(weekGrid);
+        }
+
+        function exportToPDF() {
+            const element = document.getElementById('scheduleContent');
+            const opt = {
+                margin: [0.5, 0.5, 0.5, 0.5],
+                filename: 'gym_schedule.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function exportToJSON(schedule) {
+            const dataStr = JSON.stringify(schedule, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const exportFileDefaultName = 'gym_schedule.json';
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        document.getElementById('scheduleForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const goal = document.getElementById('goal').value;
+            const daysCount = document.getElementById('daysCount').value;
+            const level = document.getElementById('level').value;
+            const duration = document.getElementById('duration').value;
+            
+            const generator = new ScheduleGenerator(goal, daysCount, level, duration);
+            const schedule = generator.generate();
+            
+            renderSchedule(schedule);
+            
+            window.currentSchedule = schedule;
+        });
+        
+        document.getElementById('exportPdf').addEventListener('click', () => {
+            if (window.currentSchedule) {
+                exportToPDF();
+            } else {
+                alert('Сначала сгенерируйте расписание');
+            }
+        });
+        
+        document.getElementById('exportJson').addEventListener('click', () => {
+            if (window.currentSchedule) {
+                exportToJSON(window.currentSchedule);
+            } else {
+                alert('Сначала сгенерируйте расписание');
+            }
+        });
+        
+        // Генерируем расписание по умолчанию при загрузке
+        setTimeout(() => {
+            const defaultGenerator = new ScheduleGenerator('strength', '4', 'intermediate', '60');
+            const defaultSchedule = defaultGenerator.generate();
+            renderSchedule(defaultSchedule);
+            window.currentSchedule = defaultSchedule;
+        }, 100);
+    </script>
+</body>
+</html>
